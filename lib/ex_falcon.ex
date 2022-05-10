@@ -1,6 +1,7 @@
 defmodule ExFalcon do
   @moduledoc """
   Documentation for `ExFalcon`.
+  todo: impl Library functions.
   """
 
   @doc """
@@ -12,6 +13,7 @@ defmodule ExFalcon do
       :world
 
   """
+
   def hello do
     :world
   end
