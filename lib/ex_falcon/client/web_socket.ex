@@ -1,4 +1,4 @@
-defmodule ExFalcon.WSClient do
+defmodule ExFalcon.Client.WS do
   @moduledoc """
   TODO:
   """
@@ -9,7 +9,7 @@ defmodule ExFalcon.WSClient do
   def authenticate(_key, _secret, _passphrase) do
   end
 
-  def subscribe(event) do
+  def subscribe(_event) do
     nil
   end
 end

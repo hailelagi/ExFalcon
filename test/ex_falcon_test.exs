@@ -2,7 +2,7 @@ defmodule ExFalconTest do
   use ExUnit.Case
   doctest ExFalcon
 
-  test "greets the world" do
-    assert ExFalcon.hello() == "fail"
+  test "inspect" do
+    assert ExFalcon.get_trading_pairs() == :get
   end
 end
