@@ -2,8 +2,6 @@ defmodule ExFalcon.Client do
   @moduledoc """
     REST client for querying the FalconX API using HTTP calls.
   """
-  @version "v1"
-
   use Tesla
 
   plug Tesla.Middleware.BaseUrl, "#{Application.get_env(:ex_falcon, :base_url)}"
@@ -18,7 +16,7 @@ defmodule ExFalcon.Client do
   def pairs, do: Tesla.get("/pairs") |> parse_response()
 
   def get_quote(opts), do: Tesla.post("/quotes", body: opts) |> parse_response()
-  def quotes(opts, id \\ ""), do: Tesla.get("/quotes#{id}", body: opts) |> parse_response()
+  def quotes(opts, id \\ ""), do: Tesla.get("/quotes/#{id}", body: opts) |> parse_response()
   def execute_quote(opts), do: Tesla.post("/quotes/execute", body: opts) |> parse_response()
 
   def place_order(opts), do: Tesla.post("/order", body: opts) |> parse_response()
@@ -32,7 +30,7 @@ defmodule ExFalcon.Client do
 
   def thirty_day_trailing_volume, do: Tesla.get("/get_30_day_trailing_volume") |> parse_response()
   def trade_volume(opts), do: Tesla.get("/get_trade_volume", query: opts) |> parse_response()
-  def token_balance_info(token), do: Tesla.get("/get_trade_volume#{token}") |> parse_response()
+  def token_balance_info(token), do: Tesla.get("/get_trade_volume/#{token}") |> parse_response()
 
   def request_withdrawal(ref_id \\ nil, opts) do
     path = if ref_id == nil, do: "/submit_withdrawal_request", else: "withdraw"

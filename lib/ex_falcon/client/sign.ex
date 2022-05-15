@@ -39,7 +39,7 @@ defmodule ExFalcon.Client.Sign do
     |> Tesla.run(next)
   end
 
-  defp generate_signature(message, secret) do
+  def generate_signature(message, secret) do
     with {:ok, key} <- Base.decode64(secret),
          {:ok, signature} <- :crypto.mac(:hmac, :sha256, key, message) do
       Base.encode64(signature)
@@ -48,6 +48,6 @@ defmodule ExFalcon.Client.Sign do
     end
   end
 
-  defp timestamp, do: DateTime.utc_now() |> DateTime.to_iso8601()
-  defp method(m), do: Atom.to_string(m) |> String.upcase()
+  def timestamp, do: DateTime.utc_now() |> DateTime.to_iso8601()
+  def method(m), do: Atom.to_string(m) |> String.upcase()
 end
