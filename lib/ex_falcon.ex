@@ -13,7 +13,7 @@ defmodule ExFalcon do
   Example:
   ```
     ExFalcon.get_trading_pairs()
-    [{'base_token': 'BTC', 'quote_token': 'USD'}, {'base_token': 'ETH', 'quote_token': 'USD'}]
+    [%{base_token: "BTC", quote_token: "USD"}, %{base_token: "ETH", quote_token: "USD"}]
   ```
   """
   @spec get_trading_pairs() :: [T.token_pair()] | T.error()
@@ -29,7 +29,15 @@ defmodule ExFalcon do
 
   Example:
   ```
-    ExFalcon.get_quote("BTC", "USD", 10, :buy)
+    ExFalcon.get_quote(
+      %{
+        "base_token": "BTC",
+        "quote_token": "USD"
+      },
+      %{
+        "token": "BTC",
+        "value": "10"
+        }, :buy)
 
     %{
       "status" => "success",
@@ -55,28 +63,25 @@ defmodule ExFalcon do
     }
   ```
   """
-  @spec get_quote(String.t(), String.t(), float(), T.side()) :: T.quote_response() | T.error()
-  def get_quote(base, fx_quote, quantity, side) do
-    side = Atom.to_string(side)
+  @spec get_quote(T.token_pair(), T.quantity(), T.side()) :: T.quote_response() | T.error()
+  def get_quote(token_pair, quantity, side) do
+    params = [token_pair: token_pair, quantity: quantity, side: Atom.to_string(side)]
 
-    case Client.quotes(base: base, quote: fx_quote, quantity: quantity, side: side) do
+    case Client.get_quote(params) do
       {:ok, fx_quotes} -> fx_quotes
       error -> error
     end
   end
 
   @doc """
-    Place a market or limit order with FalconX.
+   Get status of a quote by ID.
 
-    Example:
-    ExFalcon.place_order()
+   ExFalcon.get_quote_status(("00c884b056f949338788dfb59e495377"))
   """
-  @ spec place_order(base, fx_quote, quantity, side, order_type, opts) :: T.error()
-  def place_order() do
-    opts = ""
-
-    case Client.place_order(opts) do
-      {:ok, order} -> order
+  @spec get_quote_status(String.t()) :: T.quote_response()
+  def get_quote_status(fx_quote_id) do
+    case Client.quotes(nil, fx_quote_id) do
+      {:ok, fx_quote} -> fx_quote
       error -> error
     end
   end
@@ -85,78 +90,186 @@ defmodule ExFalcon do
   Executes a quote.
 
   Example:
-  ExFalcon.execute_quote("00c884b056f949338788dfb59e495377", :buy)
+  ```
+    ExFalcon.execute_quote("00c884b056f949338788dfb59e495377", :buy)
+  ```
   """
   @spec execute_quote(String.t(), T.side()) :: T.quote_response() | T.error()
   def execute_quote(id, side) do
-    side = Atom.to_string(side)
-
-    case Client.execute_quote(fx_quote_id: id, side: side) do
+    case Client.execute_quote(fx_quote_id: id, side: Atom.to_string(side)) do
       {:ok, fx_quote} -> fx_quote
       error -> error
     end
   end
 
   @doc """
-   Get a two_way, buy or sell quote for a token pair.
+  Get executed quotes between the given time range.
+
+  Example:
+  ```
+    ExFalcon.get_executed_quotes(
+      DateTime.utc_now(),
+      DateTime.utc_now() |> DateTime.add(-36000, :second) |> to_string,
+      :api, nil)
+  ```
+
+    Options
+      - `status`: Filter by status, possible values: success, failure or null.
+        if nil all results will be returned (default is success).
+
   """
-  def get_quote_status(fx_quote_id) do
-    nil
+  def get_executed_quotes(t_start, t_end, platform, status \\ "success") do
+    params = [
+      t_start: DateTime.to_iso8601(t_start),
+      t_end: DateTime.to_iso8601(t_end),
+      platform: Atom.to_string(platform),
+      status: status
+    ]
+
+    case Client.quotes(params) do
+      {:ok, fx_quote} -> fx_quote
+      error -> error
+    end
   end
 
   @doc """
+    Place a market or limit order with FalconX.
 
+    Example:
+    - Market Order
+    ```
+    ExFalcon.place_order(
+      %{base_token: "BTC", quote_token: "USD},
+      %{token: "BTC", value: "10"},
+      :buy, :market)
+    ```
+
+    - Limit Order
+    ```
+    ExFalcon.place_order(
+      %{base_token: "BTC", quote_token: "USD},
+      %{token: "BTC", value: "10"},
+      :buy, :limit,
+      opts: [time_inforce: "fok", limit_price: 8547.11, slippage_bps: 2])
+    ```
+
+    ## Options
+      Required if order_type is a `:limit`
+      - `time_in_force`: has the value "fok"
+      - `limit_price` : Limit price of the order in the units of quote_token
+      - `slippage_bps` : base points
   """
-  def get_executed_quotes(t_start, t_end, platform) do
-    nil
+  @callback place_order(T.token_pair(), T.quantity(), T.side(), T.order_type(), T.order_options()) ::
+              T.order_response() | T.error()
+  def place_order(token_pair, quantity, side, order_type, opts \\ []) do
+    params =
+      [
+        token_pair: token_pair,
+        quantity: quantity,
+        side: Atom.to_string(side),
+        order_type: Atom.to_string(order_type)
+      ] ++ opts
+
+    case Client.place_order(params) do
+      {:ok, order} -> order
+      error -> error
+    end
   end
 
   @doc """
+  Fetches balances for all tokens.
 
+  Example:
+    ```
+      ExFalcon.get_balances(:api)
+
+    [
+        %{
+          token: "BTC",
+          balance: 10,
+          platform: "api"
+        },
+        %{
+          token: "ETH",
+          balance: 100,
+          platform: "api"
+        }
+    ]
+    ```
   """
+  @spec get_balances(T.platform()) :: [T.balance()] | T.error()
   def get_balances(platform) do
-    nil
+    case Client.balances(platform: platform) do
+      {:ok, balances} -> balances
+      error -> error
+    end
   end
 
   @doc """
+    Get deposits / withdrawals between the given time range.
 
+    Example:
+    ```
+      ExFalcon.get_transfers(
+        DateTime.utc_now(),
+        DateTime.utc_now() |> DateTime.add(-36000, :second) |> to_string,
+        :browser,
+      )
+
+    [%{
+      "type": "deposit",
+      "platform": "browser",
+      "token": "BTC",
+      "quantity": 1.0,
+      "status": "completed",
+      "t_create": "2019-06-20T01:01:01+00:00"
+    }]
+    ```
   """
   def get_transfers(t_start, t_end, platform) do
-    nil
+    params = [
+      t_start: DateTime.to_iso8601(t_start),
+      t_end: DateTime.to_iso8601(t_end),
+      platform: Atom.to_string(platform)
+    ]
+
+    case Client.transfers(params) do
+      {:ok, txns} -> txns
+      error -> error
+    end
   end
 
   @doc """
-
+    Get trading volume between the given time range.
   """
+  @spec get_trade_volume(DateTime.t(), DateTime.t()) :: T.trade_volume() | T.error()
   def get_trade_volume(t_start, t_end) do
-    nil
+    params = [
+      t_start: DateTime.to_iso8601(t_start),
+      t_end: DateTime.to_iso8601(t_end),
+    ]
+
+    case Client.trade_volume(params) do
+      {:ok, volume} -> volume
+      error -> error
+    end
   end
 
-  @doc """
-
-  """
+  @spec get_trade_limits(T.platform()) :: T.trade_limits() | T.error()
   def get_trade_limits(platform) do
-    nil
+    case Client.trade_limits(platform: Atom.to_string(platform)) do
+      {:ok, limit} -> limit
+      error -> error
+    end
   end
 
   @doc """
-
-  """
-  def get_trade_sizes do
-    nil
-  end
-
-  @doc """
-
-  """
-  def get_trade_sizes do
-    nil
-  end
-
-  @doc """
-
+  Fetches total balances for all tokens combined over all platforms.
   """
   def get_total_balances do
-    nil
+    case Client.total_balances do
+      {:ok, balances} -> balances
+      error -> error
+    end
   end
 end

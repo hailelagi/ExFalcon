@@ -1,6 +1,10 @@
 # ExFalcon
 FalconX (https://falconx.io/) elixir client wrapper.
 
+## Limitations
+- No websocket api implementation
+- Does not support `client_order_id` and `client_order_uuid`
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
