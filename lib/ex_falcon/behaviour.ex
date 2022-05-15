@@ -94,9 +94,6 @@ defmodule ExFalcon.Behaviour do
   @type falcon_x_error :: %{code: String.t(), reason: String.t()}
 
   ### behaviour ###
-  @callback authenticate(key :: String.t(), secret :: String.t(), passphrase :: String.t()) ::
-              {:ok, String.t(), String.t()} | {:error, String.t()}
-
   @callback get_trading_pairs() :: [token_pair()] | error()
 
   @callback get_quote(

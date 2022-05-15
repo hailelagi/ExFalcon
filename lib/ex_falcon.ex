@@ -4,13 +4,10 @@ defmodule ExFalcon do
   """
   @behaviour ExFalcon.Behaviour
 
-  # alias ExFalcon.Client
+  alias ExFalcon.Client
 
-  def authenticate(key, secret, passphrase) do
-    {:error, "Unauthenticated"}
-  end
   def get_trading_pairs do
-    nil
+    Client.get_pairs()
   end
 
   def get_quote(base, fx_quote, quantity, side) do
