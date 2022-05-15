@@ -6,15 +6,14 @@ defmodule ExFalcon.Client do
 
   use Tesla
 
-  plug(Tesla.Middleware.BaseUrl, "#{Application.get_env(:ex_falcon, :base_url)}")
+  plug Tesla.Middleware.BaseUrl, "#{Application.get_env(:ex_falcon, :base_url)}"
 
-  plug(Tesla.Middleware.Sign,
+  plug Tesla.Middleware.Sign,
     api_key: Application.get_env(:ex_falcon, :api_key),
     passphrase: Application.get_env(:ex_falcon, :passphrase),
     secret_key: Application.get_env(:ex_falcon, :secret_key)
-  )
 
-  plug(Tesla.Middleware.JSON)
+  plug Tesla.Middleware.JSON
 
   def pairs, do: Tesla.get("/pairs") |> parse_response()
 
@@ -22,15 +21,15 @@ defmodule ExFalcon.Client do
 
   def execute_quote(opts), do: Tesla.post("/quotes/execute", body: opts) |> parse_response()
 
-  def executed_quotes, do: Tesla.get("/quotes")
+  def executed_quotes, do: Tesla.get("/quotes") |> parse_response()
 
-  def place_order(opts), do: Tesla.post("/order", body: opts)
+  def place_order(opts), do: Tesla.post("/order", body: opts) |> parse_response()
 
   def order_history, do: Tesla.get("/orders") |> parse_response()
 
   def balances, do: Tesla.get("/balances") |> parse_response()
 
-  def total_balances, do: Tesla.get("/balances/total")
+  def total_balances, do: Tesla.get("/balances/total") |> parse_response()
 
   def transfer(id), do: Tesla.get("/transfer/#{id}") |> parse_response()
 
@@ -64,19 +63,19 @@ defmodule ExFalcon.Client do
     # todo: handle Falcon errors
     case response do
       {:ok, %{status: 400, body: _body}} ->
-        {:error, %{code: 400, reason: "Bad Request"}}
+        {:error, %{code: "400", reason: "Bad Request"}}
 
       {:ok, %{status: 401, body: _body}} ->
-        {:error, %{code: 401, reason: "Invalid API Key"}}
+        {:error, %{code: "401", reason: "Invalid API Key"}}
 
       {:ok, %{status: 403, body: _body}} ->
-        {:error, %{code: 403, reason: "Forbidden"}}
+        {:error, %{code: "403", reason: "Forbidden"}}
 
       {:ok, %{status: 404, body: _body}} ->
-        {:error, %{code: 404, reason: "Resource Not Found"}}
+        {:error, %{code: "404", reason: "Resource Not Found"}}
 
       {:ok, %{status: 500, body: _body}} ->
-        {:error, %{code: 500, reason: "Internal Server Error"}}
+        {:error, %{code: "500", reason: "Internal Server Error"}}
     end
   end
 end
