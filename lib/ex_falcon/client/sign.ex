@@ -44,7 +44,7 @@ defmodule ExFalcon.Client.Sign do
          {:ok, signature} <- :crypto.mac(:hmac, :sha256, key, message) do
       Base.encode64(signature)
     else
-      _ -> {:error, "Bad secret key or passphrase"}
+      _ -> {:error, "Bad api/secret key or passphrase"}
     end
   end
 

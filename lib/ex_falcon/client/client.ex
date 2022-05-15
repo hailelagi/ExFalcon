@@ -6,7 +6,7 @@ defmodule ExFalcon.Client do
 
   use Tesla
 
-  plug(Tesla.Middleware.BaseUrl, "https://api.falconx.io/#{@version}")
+  plug(Tesla.Middleware.BaseUrl, "#{Application.get_env(:ex_falcon, :base_url)}")
 
   plug(Tesla.Middleware.Sign,
     api_key: Application.get_env(:ex_falcon, :api_key),
