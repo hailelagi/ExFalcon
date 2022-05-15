@@ -48,6 +48,6 @@ defmodule ExFalcon.Client.Sign do
     end
   end
 
-  defp timestamp, do: DateTime.utc_now() |> to_string()
+  defp timestamp, do: DateTime.utc_now() |> DateTime.to_iso8601()
   defp method(m), do: Atom.to_string(m) |> String.upcase()
 end
