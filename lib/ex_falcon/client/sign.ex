@@ -25,12 +25,12 @@ defmodule ExFalcon.Client.Sign do
 
   def call(env, next, options) do
     timestamp = timestamp()
-    method = Atom.to_string(env.method) |> String.upcase()
-    prehash = timestamp <> method <> env.url <> Tesla.encode_query(env.body)
+    method = method(env.method)
+    body = env.body || ""
+    prehash = timestamp <> method <> env.url <> Tesla.encode_query(body)
 
     env
     |> Tesla.put_headers([
-      {"FX-ACCESS-PASSPHRASE", options[:passphrase]},
       {"FX-ACCESS-KEY", options[:api_key]},
       {"FX-ACCESS-SIGN", generate_signature(prehash, options[:secret_key])},
       {"FX-ACCES-TIMESTAMP", timestamp},
@@ -48,7 +48,6 @@ defmodule ExFalcon.Client.Sign do
     end
   end
 
-  defp timestamp do
-    DateTime.utc_now() |> to_string()
-  end
+  defp timestamp, do: DateTime.utc_now() |> to_string()
+  defp method(m), do: Atom.to_string(m) |> String.upcase()
 end
