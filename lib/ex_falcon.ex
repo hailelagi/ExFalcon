@@ -2,10 +2,104 @@ defmodule ExFalcon do
   @moduledoc """
     ExFalcon is a library that wraps the FalconX API.
   """
-  @behaviour ExFalcon.Behaviour
+  # TODO:
+  # cleanup broken function signature
+  # test
 
-  alias ExFalcon.Behaviour, as: T
-  alias ExFalcon.Client
+
+  ### api types ####
+  @type token_pair :: %{base_token: String.t(), quote_token: String.t()}
+  @type quantity :: %{token: String.t(), value: float()}
+  @type balance :: %{token: String.t(), balance: float(), platform: platform()}
+  @type total_balance :: %{token: String.t(), total_balance: float()}
+  @type transfer :: %{
+          type: String.t(),
+          platform: platform(),
+          token: String.t(),
+          quantity: quantity(),
+          create_time: DateTime.t(),
+          status: String.t()
+        }
+  @type trade_volume :: %{
+          start_date: DateTime.t(),
+          end_date: DateTime.t(),
+          usd_volume: float()
+        }
+  @type trade_limit :: %{available: float(), total: float(), used: float()}
+  @type trade_size_limit :: %{min: float(), max: float()}
+  @type trade_limits :: %{gross_limits: trade_limit(), net_limits: trade_limit()}
+  @type trade_size :: %{
+          platform: platform(),
+          token_pair: token_pair(),
+          trade_size_limit_quote_token: trade_size_limit()
+        }
+
+  ### api response types ###
+  @type quote_response :: %{
+          status: String.t(),
+          fx_quote_id: String.t(),
+          buy_price: float(),
+          sell_price: float(),
+          platform: platform(),
+          token_pair: token_pair(),
+          quantity: quantity(),
+          position_in: quantity(),
+          position_out: quantity(),
+          side_requested: String.t(),
+          quote_time: DateTime.t(),
+          expiry_time: DateTime.t(),
+          execution_time: DateTime.t(),
+          is_filled: boolean(),
+          trader_email: String.t(),
+          error: falcon_x_error(),
+          warnings: falcon_x_warning(),
+          client_order_id: String.t()
+        }
+
+  @type order_response :: %{
+          status: String.t(),
+          fx_quote_id: String.t(),
+          buy_price: float(),
+          sell_price: float(),
+          platform: platform(),
+          token_pair: token_pair(),
+          quantity: quantity(),
+          side_requested: String.t(),
+          quote_time: DateTime.t(),
+          expiry_time: DateTime.t(),
+          execution_time: DateTime.t(),
+          is_filled: boolean(),
+          gross_fee_bps: float(),
+          gross_fee_usd: float(),
+          rebate_bps: float(),
+          rebate_usd: float(),
+          fee_bps: float(),
+          fee_usd: float(),
+          side_executed: String.t(),
+          trader_email: String.t(),
+          order_type: order_type(),
+          time_in_force: String.t(),
+          limit_price: float(),
+          slippage_bps: float(),
+          error: falcon_x_error(),
+          warnings: falcon_x_warning(),
+          client_order_id: String.t()
+        }
+
+  ### helper types ###
+  @type side :: :two_way | :buy | :sell
+  @type platform :: :browser | :api | :margin
+  @type order_type :: :market | :limit
+  @type order_options :: %{
+          time_inforce: String.t(),
+          limit_price: float(),
+          slippage_bps: non_neg_integer()
+        }
+
+  ### error types ###
+  @type error :: {:error, falcon_x_error()}
+  @type falcon_x_warning :: %{code: String.t(), message: String.t(), side: side()}
+  @type falcon_x_error :: %{code: String.t(), reason: String.t()}
 
   @doc """
   Gets a list of trading pairs you are eligible to trade.
@@ -16,13 +110,13 @@ defmodule ExFalcon do
     [%{base_token: "BTC", quote_token: "USD"}, %{base_token: "ETH", quote_token: "USD"}]
   ```
   """
-  @spec get_trading_pairs() :: [T.token_pair()] | T.error()
-  def get_trading_pairs do
-    case Client.pairs() do
-      {:ok, pairs} -> pairs
-      error -> error
-    end
-  end
+  # @spec get_trading_pairs() :: [token_pair()] | error()
+  # def get_trading_pairs do
+  #   case Client.pairs() do
+  #     {:ok, pairs} -> pairs
+  #     error -> error
+  #   end
+  # end
 
   @doc """
   Gets a two_way, buy or sell quote for a token pair.
@@ -63,14 +157,11 @@ defmodule ExFalcon do
     }
   ```
   """
-  @spec get_quote(T.token_pair(), T.quantity(), T.side()) :: T.quote_response() | T.error()
+  @spec get_quote(token_pair(), quantity(), side()) :: quote_response() | error()
   def get_quote(token_pair, quantity, side) do
-    params = [token_pair: token_pair, quantity: quantity, side: Atom.to_string(side)]
+    params = %{token_pair: token_pair, quantity: quantity, side: Atom.to_string(side)}
 
-    case Client.get_quote(params) do
-      {:ok, fx_quotes} -> fx_quotes
-      error -> error
-    end
+    impl().get_quote(params)
   end
 
   @doc """
@@ -78,13 +169,14 @@ defmodule ExFalcon do
 
    ExFalcon.get_quote_status(("00c884b056f949338788dfb59e495377"))
   """
-  @spec get_quote_status(String.t()) :: T.quote_response()
-  def get_quote_status(fx_quote_id) do
-    case Client.quotes(nil, fx_quote_id) do
-      {:ok, fx_quote} -> fx_quote
-      error -> error
-    end
-  end
+
+  # @spec get_quote_status(String.t()) :: quote_response()
+  # def get_quote_status(fx_quote_id) do
+  #   case Client.quotes(nil, fx_quote_id) do
+  #     {:ok, fx_quote} -> fx_quote
+  #     error -> error
+  #   end
+  # end
 
   @doc """
   Executes a quote.
@@ -94,12 +186,9 @@ defmodule ExFalcon do
     ExFalcon.execute_quote("00c884b056f949338788dfb59e495377", :buy)
   ```
   """
-  @spec execute_quote(String.t(), T.side()) :: T.quote_response() | T.error()
+  @spec execute_quote(String.t(), side()) :: quote_response() | error()
   def execute_quote(id, side) do
-    case Client.execute_quote(fx_quote_id: id, side: Atom.to_string(side)) do
-      {:ok, fx_quote} -> fx_quote
-      error -> error
-    end
+    impl().execute_quote(%{fx_quote_id: id, side: Atom.to_string(side)})
   end
 
   @doc """
@@ -119,17 +208,14 @@ defmodule ExFalcon do
 
   """
   def get_executed_quotes(t_start, t_end, platform, status \\ "success") do
-    params = [
+    params = %{
       t_start: DateTime.to_iso8601(t_start),
       t_end: DateTime.to_iso8601(t_end),
       platform: Atom.to_string(platform),
       status: status
-    ]
+    }
 
-    case Client.quotes(params) do
-      {:ok, fx_quote} -> fx_quote
-      error -> error
-    end
+    impl().get_executed_quotes(params)
   end
 
   @doc """
@@ -159,21 +245,19 @@ defmodule ExFalcon do
       - `limit_price` : Limit price of the order in the units of quote_token
       - `slippage_bps` : base points
   """
-  @callback place_order(T.token_pair(), T.quantity(), T.side(), T.order_type(), T.order_options()) ::
-              T.order_response() | T.error()
-  def place_order(token_pair, quantity, side, order_type, opts \\ []) do
+  @callback place_order(token_pair(), quantity(), side(), order_type(), order_options()) ::
+              order_response() | error()
+  def place_order(token_pair, quantity, side, order_type, opts \\ %{}) do
     params =
-      [
+      %{
         token_pair: token_pair,
         quantity: quantity,
         side: Atom.to_string(side),
         order_type: Atom.to_string(order_type)
-      ] ++ opts
+      }
+      |> Map.merge(opts)
 
-    case Client.place_order(params) do
-      {:ok, order} -> order
-      error -> error
-    end
+    impl().place_order(params)
   end
 
   @doc """
@@ -197,12 +281,9 @@ defmodule ExFalcon do
     ]
     ```
   """
-  @spec get_balances(T.platform()) :: [T.balance()] | T.error()
+  @spec get_balances(platform()) :: [balance()] | error()
   def get_balances(platform) do
-    case Client.balances(platform: platform) do
-      {:ok, balances} -> balances
-      error -> error
-    end
+    impl().balances(platform: platform)
   end
 
   @doc """
@@ -227,49 +308,37 @@ defmodule ExFalcon do
     ```
   """
   def get_transfers(t_start, t_end, platform) do
-    params = [
+    params = %{
       t_start: DateTime.to_iso8601(t_start),
       t_end: DateTime.to_iso8601(t_end),
       platform: Atom.to_string(platform)
-    ]
+    }
 
-    case Client.transfers(params) do
-      {:ok, txns} -> txns
-      error -> error
-    end
+    impl().transfers(params)
   end
 
   @doc """
     Get trading volume between the given time range.
   """
-  @spec get_trade_volume(DateTime.t(), DateTime.t()) :: T.trade_volume() | T.error()
+  @spec get_trade_volume(DateTime.t(), DateTime.t()) :: trade_volume() | error()
   def get_trade_volume(t_start, t_end) do
-    params = [
-      t_start: DateTime.to_iso8601(t_start),
-      t_end: DateTime.to_iso8601(t_end),
-    ]
+    params = %{t_start: DateTime.to_iso8601(t_start), t_end: DateTime.to_iso8601(t_end)}
 
-    case Client.trade_volume(params) do
-      {:ok, volume} -> volume
-      error -> error
-    end
+    impl().trade_volume(params)
   end
 
-  @spec get_trade_limits(T.platform()) :: T.trade_limits() | T.error()
+  @spec get_trade_limits(platform()) :: trade_limits() | error()
   def get_trade_limits(platform) do
-    case Client.trade_limits(platform: Atom.to_string(platform)) do
-      {:ok, limit} -> limit
-      error -> error
-    end
+    # todo: Enum.reject() unknown platform b4 atomization
+    impl().trade_limits(platform: Atom.to_string(platform))
   end
 
   @doc """
   Fetches total balances for all tokens combined over all platforms.
   """
   def get_total_balances do
-    case Client.total_balances do
-      {:ok, balances} -> balances
-      error -> error
-    end
+    impl().total_balances()
   end
+
+  defp impl, do: Application.get_env(:ex_falcon, :api, ExFalcon.Client)
 end

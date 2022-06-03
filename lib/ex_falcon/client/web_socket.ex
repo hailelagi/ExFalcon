@@ -10,11 +10,16 @@ defmodule ExFalcon.Client.WS do
   @version "v2"
 
   def start_link(state) do
+    # todo: namespace the ws client
     WebSockex.start_link(@url, __MODULE__, state)
   end
 
   def subscribe(_event) do
     nil
+  end
+
+  def handle_frame({:event, msg}, state) do
+    {:ok, state}
   end
 
   def add_headers() do

@@ -3,6 +3,7 @@ defmodule ExFalcon.Client do
     REST client for querying the FalconX API using HTTP calls.
   """
   use Tesla
+  @behaviour ExFalcon.Behaviour
 
   plug Tesla.Middleware.BaseUrl, "#{Application.get_env(:ex_falcon, :base_url)}"
 
@@ -13,16 +14,18 @@ defmodule ExFalcon.Client do
 
   plug Tesla.Middleware.JSON
 
-  def pairs, do: Tesla.get("/pairs") |> parse_response()
+  # TODO: implement correct behaviour
+
+  def get_trading_pairs, do: Tesla.get("/pairs") |> parse_response()
 
   def get_quote(opts), do: Tesla.post("/quotes", body: opts) |> parse_response()
-  def quotes(opts, id \\ ""), do: Tesla.get("/quotes/#{id}", body: opts) |> parse_response()
+  def get_quote_status(id \\ "", opts), do: Tesla.get("/quotes/#{id}", body: opts) |> parse_response()
   def execute_quote(opts), do: Tesla.post("/quotes/execute", body: opts) |> parse_response()
 
   def place_order(opts), do: Tesla.post("/order", body: opts) |> parse_response()
   def order_history(opts), do: Tesla.get("/orders", body: opts) |> parse_response()
 
-  def balances(opts), do: Tesla.get("/balances", query: opts) |> parse_response()
+  def get_balances(opts), do: Tesla.get("/balances", query: opts) |> parse_response()
   def total_balances, do: Tesla.get("/balances/total") |> parse_response()
 
   def transfer(id), do: Tesla.get("/transfer/#{id}") |> parse_response()

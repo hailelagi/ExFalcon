@@ -25,9 +25,10 @@ ex_falcon-*.tar
 # Temporary files, for example, from tests.
 /tmp/
 
-# Ignore VS Code settlings
+# Ignore VS Code and intelliJ settlings
 .elixir_ls
 .DS_Store
+.idea
 
 # Ignore asdf and secrets
 .tools-version
